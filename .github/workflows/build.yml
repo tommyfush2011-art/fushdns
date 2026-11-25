@@ -26,7 +26,7 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc \
             --output-dir build \
-            FushDNS_Portable
+            "FushDNS_Portable_v0.1 (1)/FushDNS_Portable"
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
