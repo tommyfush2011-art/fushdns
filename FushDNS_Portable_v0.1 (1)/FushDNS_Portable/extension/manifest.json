@@ -1,0 +1,1 @@
+{"manifest_version":3,"name":"Fush DNS Portable","version":"0.1.0","permissions":["declarativeNetRequest"],"host_permissions":["http://*/*","https://*/*"],"action":{"default_title":"Fush DNS Portable"},"background":{"service_worker":"background.js"}}
