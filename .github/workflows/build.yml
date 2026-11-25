@@ -14,6 +14,26 @@ jobs:
 
       - uses: arduino/setup-arduino-cli@v2
 
+      - name: Find firmware source
+        run: |
+          find . -type f
+          SKETCH=$(find . -type f -name "*.ino" -print -quit)
+
+          if [ -z "$SKETCH" ]; then
+            echo "ERROR: No Arduino sketch found!"
+            exit 1
+          fi
+
+          echo "Found sketch: $SKETCH"
+          mkdir -p /tmp/FushDNS
+          cp -r "$(dirname "$SKETCH")/." /tmp/FushDNS/
+          cp "$SKETCH" /tmp/FushDNS/FushDNS.ino
+
+          ORIGINAL=$(basename "$SKETCH")
+          if [ "$ORIGINAL" != "FushDNS.ino" ]; then
+            rm "/tmp/FushDNS/$ORIGINAL"
+          fi
+
       - name: Install ESP32 core
         run: |
           arduino-cli config init
@@ -26,7 +46,7 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc \
             --output-dir build \
-            "FushDNS_Portable_v0.1 (1)/FushDNS_Portable"
+            /tmp/FushDNS
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
