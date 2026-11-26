@@ -17,23 +17,47 @@ jobs:
       - name: Prepare firmware source
         run: |
           SOURCE="FushDNS_Portable_v0.1 (1)/FushDNS_Portable"
+          rm -rf /tmp/Fush
           mkdir -p /tmp/Fush
           cp -r "$SOURCE/." /tmp/Fush/
-          touch /tmp/Fush/Fush.ino
+
+          # Arduino only compiles the sketch root and src/**. Hoist everything else up.
+          find /tmp/Fush -mindepth 2 -type f \
+               \( -name '*.cpp' -o -name '*.c' -o -name '*.h' -o -name '*.hpp' \) \
+               -not -path '*/src/*' -exec mv -t /tmp/Fush {} +
+
+          # exactly one main file, and it must match the folder name
+          find /tmp/Fush -maxdepth 1 -name '*.ino' ! -name 'Fush.ino' -print -delete
+          printf '// implementation lives in the hoisted .cpp\n' > /tmp/Fush/Fush.ino
+
+          echo "--- prepared sketch ---"
+          find /tmp/Fush -type f | sort
+
+          if ! grep -rq 'void setup(' /tmp/Fush; then
+            echo "::error::no setup() found in prepared sketch"
+            exit 1
+          fi
 
       - name: Install ESP32 core
         run: |
-          arduino-cli config init
+          arduino-cli config init --overwrite
           arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32
+          arduino-cli core install esp32:esp32@4.0.0
 
       - name: Compile firmware
         run: |
           arduino-cli compile \
             --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc \
+            --build-path "$RUNNER_TEMP/build" \
+            --warnings default \
             --output-dir build \
             /tmp/Fush
+
+      - name: Assert binary
+        run: |
+          ls -la build
+          test -n "$(ls build/*.bin 2>/dev/null)" || { echo "::error::no .bin produced"; exit 1; }
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
