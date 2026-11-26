@@ -1,4 +1,4 @@
-name: Build FushDNS ESP32-C3
+name: Build Fush ESP32-C3
 
 on:
   workflow_dispatch:
@@ -14,25 +14,12 @@ jobs:
 
       - uses: arduino/setup-arduino-cli@v2
 
-      - name: Find firmware source
+      - name: Prepare firmware source
         run: |
-          find . -type f
-          SKETCH=$(find . -type f -name "*.ino" -print -quit)
-
-          if [ -z "$SKETCH" ]; then
-            echo "ERROR: No Arduino sketch found!"
-            exit 1
-          fi
-
-          echo "Found sketch: $SKETCH"
-          mkdir -p /tmp/FushDNS
-          cp -r "$(dirname "$SKETCH")/." /tmp/FushDNS/
-          cp "$SKETCH" /tmp/FushDNS/FushDNS.ino
-
-          ORIGINAL=$(basename "$SKETCH")
-          if [ "$ORIGINAL" != "FushDNS.ino" ]; then
-            rm "/tmp/FushDNS/$ORIGINAL"
-          fi
+          SOURCE="FushDNS_Portable_v0.1 (1)/FushDNS_Portable"
+          mkdir -p /tmp/Fush
+          cp -r "$SOURCE/." /tmp/Fush/
+          touch /tmp/Fush/Fush.ino
 
       - name: Install ESP32 core
         run: |
@@ -46,10 +33,10 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc \
             --output-dir build \
-            /tmp/FushDNS
+            /tmp/Fush
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: FushDNS-ESP32-C3
+          name: Fush-ESP32-C3
           path: build/*.bin
